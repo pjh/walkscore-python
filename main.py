@@ -4,7 +4,8 @@
 # API calls with Python methods.
 # Copyright (c) 2014 Peter Hornyack
 
-from pjh_utils import *
+from util.pjh_utils import *
+from apis.walkscore import WalkScore
 import argparse
 import re
 import sys
@@ -95,6 +96,14 @@ if __name__ == '__main__':
 		print_error(tag, ("unable to read API key from {}").format(
 			api_keyfile))
 		sys.exit(1)
+
+	# http://www.walkscore.com/professional/api.php
+	test_lat = 47.6085
+	test_lon = -122.3295
+	test_addr = '1119%208th%20Avenue%20Seattle%20WA%2098101'
+
+	ws = WalkScore(api_key)
+	score = ws.score(test_lat, test_lon, test_addr)
 
 	sys.exit(0)
 else:

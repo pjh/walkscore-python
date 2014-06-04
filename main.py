@@ -97,13 +97,18 @@ if __name__ == '__main__':
 			api_keyfile))
 		sys.exit(1)
 
-	# http://www.walkscore.com/professional/api.php
 	test_lat = 47.6085
 	test_lon = -122.3295
 	test_addr = '1119%208th%20Avenue%20Seattle%20WA%2098101'
+		# TODO: use urllib.parse.quote to escape spaces and special
+		# characters in a normal address.
 
 	ws = WalkScore(api_key)
 	score = ws.score(test_lat, test_lon, test_addr)
+	if score is None:
+		sys.exit(1)
+	else:
+		print("Got Walk Score: {}".format(score))
 
 	sys.exit(0)
 else:

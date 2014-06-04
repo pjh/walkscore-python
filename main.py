@@ -36,8 +36,8 @@ def read_api_key(api_keyfile):
 	if api_key_match:
 		api_key = api_key_match.group(0)
 	else:
-		print_error(tag, ("firstline didn't match API key regex: "
-			"{}").format(firstline))
+		print_error(tag, ("first line of file {} doesn't match API key "
+			"format").format(api_keyfile))
 		return None
 	
 	return api_key
@@ -47,11 +47,11 @@ def build_arg_parser():
 	tag = 'build_arg_parser'
 
 	parser = argparse.ArgumentParser(
-		description=("Walk Score API playground"),
+		description=("Walk Score API wrapper"),
 		add_help=True)
 	parser.add_argument(
 		'api_keyfile', metavar='api-keyfile', type=str,
-		help='file containing WS API key')
+		help='file containing WS API key (on first line)')
 
 	return parser
 
@@ -61,7 +61,6 @@ if __name__ == '__main__':
 
 	parser = build_arg_parser()
 	args = parser.parse_args(sys.argv[1:])
-	#print_debug(tag, ("parsed args: {}").format(args))
 	api_keyfile = args.api_keyfile
 
 	api_key = read_api_key(api_keyfile)

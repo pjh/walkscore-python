@@ -4,6 +4,7 @@
 
 from util.pjh_utils import *
 import urllib.request
+import xml.etree.ElementTree as ET
 
 # http://www.walkscore.com/professional/api.php
 BASE_URL = 'http://api.walkscore.com'
@@ -40,7 +41,7 @@ class WalkScore:
 		api_url = ("{}/score?format=xml&address={}&lat={}"
 			"&lon={}&wsapikey={}").format(BASE_URL, address, lat, lon,
 			self.api_key)
-		print_debug(tag, ("api_url: {}").format(api_url))
+		#print_debug(tag, ("api_url: {}").format(api_url))
 
 		# On success, urlopen returns an http.client.HTTPResponse object.
 		try:
@@ -54,15 +55,36 @@ class WalkScore:
 				response.status))
 			return None
 
+		# Get the type and encoding for the response's body. For now,
+		# just check for expected response: XML with utf-8 encoding.
+		for (header, value) in response.getheaders():
+			#print_debug(tag, ("header={}, value={}").format(header, value))
+			if header == 'Content-Type':
+				if value != 'application/xml; charset=utf-8':
+					print_error(tag, ("received unexpected Content-Type: "
+						"{}").format(value))
+					return None
+				break
+
 		# The expected byte string looks like:
 		#   <?xml version="1.0" encoding="utf-8"?>
 		#   <result xmlns="http://walkscore.com/2008/results">
 		#   <status>1</status>
 		#       <walkscore>95</walkscore>
 		#   ...
-		body = response.read()   # byte string
-		#print_debug(tag, ("response status={}, body={}").format(
-		#	response.status, body))
+		# XML processing: https://docs.python.org/3/library/xml.html
+		# https://docs.python.org/3/library/xml.etree.elementtree.html
+		# http://stackoverflow.com/a/10338267/1230197, but ->
+		# http://stackoverflow.com/a/14124492/1230197
+		body = response.read().decode('utf-8')   # bytes -> str
+		print_debug(tag, ("body: {}").format(body))
+		root = ET.fromstring(body)
+		score_element = root.find('ws:walkscore',
+				namespaces={'ws':'http://walkscore.com/2008/results'})
+		if score_element is not None:
+			print_debug(tag, ("score_element={}").format(score_element))
+		else:
+			print_debug(tag, ("no score_element found"))
 
 		return None
 

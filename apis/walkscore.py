@@ -110,15 +110,16 @@ class WalkScore:
 				descr = ('Your IP address has been blocked.')
 			else:
 				descr = ('Unknown')
-			print_error(tag, ("Response has bad status code {}: {}").format(
-				status, descr))
+			print_error(tag, ("Response has bad status code {}: "
+				"{}").format(status, descr))
 			return None
 
 		result = dict()
 		result['status'] = status
 		result['walkscore'] = int(root.find('ws:walkscore',
 		                                    namespaces=ns).text)
-		result['description'] = root.find('ws:description', namespaces=ns).text
+		result['description'] = root.find('ws:description',
+		                                  namespaces=ns).text
 		result['updated'] = root.find('ws:updated', namespaces=ns).text
 		result['logo_url'] = root.find('ws:logo_url', namespaces=ns).text
 		result['more_info_icon'] = root.find('ws:more_info_icon',

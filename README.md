@@ -9,5 +9,6 @@ Before using the code in this repository, the following dependencies must be sat
 Run `./main.py -h` to see help and usage.
 
 Todo list:
+* Read in target addresses from a file and fetch the walk score result for each of them.
 * Create additional classes under apis/ for transit score and travel time APIs. Perhaps inherit all of these classes from one common base class.
 

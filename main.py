@@ -55,6 +55,7 @@ def build_arg_parser():
 
 	return parser
 
+##############################################################################
 # Main:
 if __name__ == '__main__':
 	tag = 'main'
@@ -72,7 +73,7 @@ if __name__ == '__main__':
 	test_lat = 47.6085
 	test_lon = -122.3295
 	test_addr = '1119%208th%20Avenue%20Seattle%20WA%2098101'
-		# TODO: use urllib.parse.quote to escape spaces and special
+		# todo: use urllib.parse.quote() to escape spaces and special
 		# characters in a normal address.
 
 	ws = WalkScore(api_key)

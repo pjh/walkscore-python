@@ -12,34 +12,6 @@ import sys
 
 ##############################################################################
 
-def handle_args():
-	tag = 'handle_args'
-
-	parser = plots_parser
-	parser.add_argument('-a', '--no-analyze',
-		action='store_false', default=True, dest='analyze_first',
-		help=("skip analysis, build plots using data already in "
-			"measurementdir"))
-	parser.add_argument('-p', '--no-perf-analysis',
-		action='store_false', default=True, dest='analyze_perf',
-		help=("skip perf analysis, build plots using data already in "
-			"measurementdir"))
-
-	args = parser.parse_args()   # uses sys.argv
-	print_debug(tag, ("parser returned args: {}").format(args))
-	
-	if not os.path.exists(args.measurementdir):
-		print_error(tag, ("non-existent measurementdir: {}").format(
-			args.measurementdir))
-		return (None, None, None, None, None, None)
-
-	return (args.measurementdir, args.group_multiproc,
-		args.process_userstacks, args.lookup_fns,
-		args.analyze_first, args.analyze_perf,
-		args.skip_page_events)
-
-##############################################################################
-
 def read_api_key(api_keyfile):
 	"""Attempts to read the Walk Score API key from the specified file.
 	The API key should be the only string on the first line of the
@@ -75,7 +47,8 @@ def build_arg_parser():
 	tag = 'build_arg_parser'
 
 	parser = argparse.ArgumentParser(
-		description=("Walk Score API playground"))
+		description=("Walk Score API playground"),
+		add_help=True)
 	parser.add_argument(
 		'api_keyfile', metavar='api-keyfile', type=str,
 		help='file containing WS API key')
@@ -104,11 +77,11 @@ if __name__ == '__main__':
 		# characters in a normal address.
 
 	ws = WalkScore(api_key)
-	score = ws.score(test_lat, test_lon, test_addr)
-	if score is None:
+	result = ws.score(test_lat, test_lon, test_addr)
+	if result is None:
 		sys.exit(1)
-	else:
-		print("Got Walk Score: {}".format(score))
+	
+	print("Got walk score: {}".format(result['walkscore']))
 
 	sys.exit(0)
 else:

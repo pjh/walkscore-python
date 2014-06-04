@@ -25,8 +25,11 @@ class WalkScore:
 
 	def score(self, lat, lon, address):
 		"""
-		Returns the Walk Score of the specified location. Both the
-		lat/lon and address are required. On error, None is returned.
+		Performs a Walk Score API call for the specified location (both
+		the lat/lon and the address are required). On success, returns
+		a dict with keys matching the XML result names listed at
+		http://www.walkscore.com/professional/api.php. On error,
+		returns None.
 		"""
 		tag = "{}.score".format(self.tag)
 
@@ -41,7 +44,6 @@ class WalkScore:
 		api_url = ("{}/score?format=xml&address={}&lat={}"
 			"&lon={}&wsapikey={}").format(BASE_URL, address, lat, lon,
 			self.api_key)
-		#print_debug(tag, ("api_url: {}").format(api_url))
 
 		# On success, urlopen returns an http.client.HTTPResponse object.
 		try:
@@ -58,7 +60,6 @@ class WalkScore:
 		# Get the type and encoding for the response's body. For now,
 		# just check for expected response: XML with utf-8 encoding.
 		for (header, value) in response.getheaders():
-			#print_debug(tag, ("header={}, value={}").format(header, value))
 			if header == 'Content-Type':
 				if value != 'application/xml; charset=utf-8':
 					print_error(tag, ("received unexpected Content-Type: "
@@ -66,25 +67,69 @@ class WalkScore:
 					return None
 				break
 
-		# The expected byte string looks like:
+		# The expected XML body looks like:
 		#   <?xml version="1.0" encoding="utf-8"?>
 		#   <result xmlns="http://walkscore.com/2008/results">
-		#   <status>1</status>
+		#       <status>1</status>
 		#       <walkscore>95</walkscore>
-		#   ...
+		#       ...
+		#   </result>
 		# XML processing: https://docs.python.org/3/library/xml.html
 		# https://docs.python.org/3/library/xml.etree.elementtree.html
-		# http://stackoverflow.com/a/10338267/1230197, but ->
-		# http://stackoverflow.com/a/14124492/1230197
+		#
+		# The element with tag 'result' is the root of the XML tree;
+		# there can only be one result (or else it would be a forest,
+		# not a tree!).
 		body = response.read().decode('utf-8')   # bytes -> str
-		print_debug(tag, ("body: {}").format(body))
 		root = ET.fromstring(body)
-		score_element = root.find('ws:walkscore',
-				namespaces={'ws':'http://walkscore.com/2008/results'})
-		if score_element is not None:
-			print_debug(tag, ("score_element={}").format(score_element))
-		else:
-			print_debug(tag, ("no score_element found"))
 
-		return None
+		# The 'xmlns' attribute in the result element is a namespace
+		# specifier, which necessitates some special handling when parsing
+		# / finding elements; if the target namespace is not specified
+		# correctly, then it is implicitly prepended to the .tag value of
+		# every Element, which is annoying.
+		#   http://stackoverflow.com/a/10338267/1230197, but ->
+		#   http://stackoverflow.com/a/14124492/1230197
+		# For now, the namespace is hard-coded here, but it could be
+		# pulled out of the root element's tag instead.
+		ns = {'ws':'http://walkscore.com/2008/results'}
+
+		# Before constructing the result dict, check the status that was
+		# returned: we may have received an HTTP 200, but the API's status
+		# could indicate an unsuccessful result.
+		status = int(root.find('ws:status', namespaces=ns).text)
+		if status != 1:
+			if status == 2:
+				descr = ('Score is being calculated and is not currently '
+					'available.')
+			elif status == 40:
+				descr = ('Your WSAPIKEY is invalid.')
+			elif status == 41:
+				descr = ('Your daily API quota has been exceeded.')
+			elif status == 42:
+				descr = ('Your IP address has been blocked.')
+			else:
+				descr = ('Unknown')
+			print_error(tag, ("Response has bad status code {}: {}").format(
+				status, descr))
+			return None
+
+		result = dict()
+		result['status'] = status
+		result['walkscore'] = int(root.find('ws:walkscore',
+		                                    namespaces=ns).text)
+		result['description'] = root.find('ws:description', namespaces=ns).text
+		result['updated'] = root.find('ws:updated', namespaces=ns).text
+		result['logo_url'] = root.find('ws:logo_url', namespaces=ns).text
+		result['more_info_icon'] = root.find('ws:more_info_icon',
+		                                     namespaces=ns).text
+		result['more_info_link'] = root.find('ws:more_info_link',
+		                                     namespaces=ns).text
+		result['ws_link'] = root.find('ws:ws_link', namespaces=ns).text
+		result['snapped_lat'] = float(root.find('ws:snapped_lat',
+		                                        namespaces=ns).text)
+		result['snapped_lon'] = float(root.find('ws:snapped_lon',
+		                                        namespaces=ns).text)
+
+		return result
 
